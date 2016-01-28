@@ -1,0 +1,24 @@
+#!/bin/bash
+
+
+if [ "`id -u`" -ne "0" ]; then
+	echo pls run as root or sudo
+	exit
+fi
+set -x
+path=`python -c "import baidupcsapi; print baidupcsapi.api.__file__"`
+echo $path
+if [ "$path" ]; then
+	tmp=${path%.py*}
+	`wget https://raw.githubusercontent.com/ly0/baidupcsapi/master/baidupcsapi/api.py`
+	cmp ./api.py ${tmp}.py
+	if [ $? == 0 ]; then
+		rm ./api.py 
+		echo nothing to update
+	else
+		echo updated
+		mv ${tmp}.py ${tmp}_`date +%s`.py 
+		mv ./api.py ${tmp}.py
+	fi
+fi
+
