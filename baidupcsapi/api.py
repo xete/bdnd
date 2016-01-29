@@ -41,8 +41,8 @@ api_template = 'http://%s/api/{0}' % BAIDUPAN_SERVER
 class LoginFailed(Exception):
 
     """
-	login failure caused by account
-	excluding login timeout.
+    login failure caused by account
+    excluding login timeout.
     """
     pass
 
@@ -52,7 +52,7 @@ class LoginFailed(Exception):
 class CancelledError(Exception):
 
     """
-	occur when user cancel upload
+    occur when user cancel upload
     """
 
     def __init__(self, msg):
@@ -68,7 +68,7 @@ class CancelledError(Exception):
 class BufferReader(MultipartEncoder):
 
     """
-	multipart-formdatai to Proxy class in the form of stream
+    multipart-formdatai to Proxy class in the form of stream
     """
 
     def __init__(self, fields, boundary=None, callback=None, cb_args=(), cb_kwargs={}):
@@ -95,7 +95,7 @@ class BufferReader(MultipartEncoder):
 
 def check_login(func):
     """
-	check user login status(pcs checking method)
+    check user login status(pcs checking method)
     """
     @wraps(func)
     def wrapper(*args, **kwargs):
@@ -119,7 +119,7 @@ def check_login(func):
 class BaseClass(object):
 
     """
-	provide basic pcs methods
+    provide basic pcs methods
     """
 
     def __init__(self, username, password, api_template=api_template, captcha_func=None):
@@ -139,8 +139,8 @@ class BaseClass(object):
 
     def get_fastest_pcs_server_test(self):
         """
-		return the address of the fastest pcs server
-		in str
+        return the address of the fastest pcs server
+        in str
         """
         ret = requests.get('https://pcs.baidu.com/rest/2.0/pcs/manage?method=listhost').content
         serverlist = [server['host'] for server in json.loads(ret)['list']]
@@ -155,8 +155,8 @@ class BaseClass(object):
         return min(time_record)[1]
 
     def get_fastest_pcs_server(self):
-		"""
-		return the address of the fastest pcs server from bd
+        """
+        return the address of the fastest pcs server from bd
         """
         url = 'http://pcs.baidu.com/rest/2.0/pcs/file?app_id=250528&method=locateupload'
         ret = requests.get(url).content
@@ -165,9 +165,9 @@ class BaseClass(object):
 
     def set_pcs_server(self, server):
         """
-		manually set bd pcs server
-		server: address or domain
-			(NOTE)no leading 'http://' and tailing '/'
+        manually set bd pcs server
+        server: address or domain
+            (NOTE)no leading 'http://' and tailing '/'
         """
         global BAIDUPCS_SERVER
         BAIDUPCS_SERVER = server
@@ -209,7 +209,7 @@ class BaseClass(object):
 
     def _get_token(self):
         # Token
-		url = 'https://passport.baidu.com/v2/api/?getapi&tpl=mn&apiver=v3&class=login&tt=%s&logintype=dialogLogin&callback=0' 
+        url = 'https://passport.baidu.com/v2/api/?getapi&tpl=mn&apiver=v3&class=login&tt=%s&logintype=dialogLogin&callback=0' 
         ret = self.session.get(url% int(time.time())).text.replace('\'', '\"')
         foo = json.loads(ret)
         logging.info('token %s' % foo['data']['token'])
@@ -272,7 +272,7 @@ class BaseClass(object):
             result = self.session.post(
                 'https://passport.baidu.com/v2/api/?login', data=login_data)
 
-			# whether need captcha
+            # whether need captcha
             if 'err_no=257' in result.content or 'err_no=6' in result.content:
                 code_string = re.findall('codeString=(.*?)&', result.content)[0]
                 logging.debug('need captcha, codeString=' + code_string)
@@ -387,27 +387,27 @@ class PCS(BaseClass):
 
     def __init__(self,  username, password, captcha_callback=None):
         """
-		username: str
-		password: str
+        username: str
+        password: str
         captcha_callback: callback for captcha_processing, jpeg will be passed in
         """
         super(PCS, self).__init__(username, password, api_template, captcha_func=captcha_callback)
 
     def __err_handler(self, act, errno, callback=None, args=(), kwargs={}):
         """
-		error handler for certain possible errors
-		act: action that go wrong(download)
-		errno: error number, combine with act
-		callback: call when return, None when null
-		args: parameters to pass in to callback(tuple)
-		kwargs: parameters dictionary
-		
+        error handler for certain possible errors
+        act: action that go wrong(download)
+        errno: error number, combine with act
+        callback: call when return, None when null
+        args: parameters to pass in to callback(tuple)
+        kwargs: parameters dictionary
+        
         """
         errno = int(errno)
 
         def err_handler_download():
             if errno == 112:
-				# page not available, please reload
+                # page not available, please reload
                 url = 'http://pan.baidu.com/disk/home'
                 self.session.get(url)
 
@@ -420,9 +420,9 @@ class PCS(BaseClass):
             return
 
         _act = {
-			'download': err_handler_download,
-			'upload': err_handler_upload,
-			'generic': err_handler_generic
+            'download': err_handler_download,
+            'upload': err_handler_upload,
+            'generic': err_handler_generic
                 }
 
         if act not in _act:
@@ -434,38 +434,38 @@ class PCS(BaseClass):
 
     def quota(self, **kwargs):
         """
-		get response information
-			{"errno":0,"total":bytes_allocated,"used":bytes_used,"request_id":request_id}
+        get response information
+            {"errno":0,"total":bytes_allocated,"used":bytes_used,"request_id":request_id}
         """
         return self._request('quota', **kwargs)
 
     def upload(self, dir, file_handler, filename, ondup="newcopy", callback=None, **kwargs):
         """
-		upload single file(less than 2GB, those beyond this limit should be sliced)
-		dir: file path on remote server, begins with '/'
-		     * path only, no filename included
-			 * lenght < 1000
-			 * \ ? | " > < : * NOT allowed
-			 * not leading by or following by . 
-			 * \r \n \t \SPC \0 \x0B NOT allowed
+        upload single file(less than 2GB, those beyond this limit should be sliced)
+        dir: file path on remote server, begins with '/'
+             * path only, no filename included
+             * lenght < 1000
+             * \ ? | " > < : * NOT allowed
+             * not leading by or following by . 
+             * \r \n \t \SPC \0 \x0B NOT allowed
         filename
         file_handler:
-		     fd -> open('foobar', 'rb')
+             fd -> open('foobar', 'rb')
         callback: upload callback, with paramters size and progress
         ondup:
-		     * 'overwrite'
-			 * 'newcopy': copy the existing as filename_date.suffix
+             * 'overwrite'
+             * 'newcopy': copy the existing as filename_date.suffix
         return: requests.Response object
-		    {
-		    "path":file path on server,
-			"size":filesize,
-			"ctime":create time,
-			"mtime":modified time,
-			"md5":md5 valuel,
-			"fs_id":file id on server,
-			"isdir":direcotry,
-			"request_id":request id
-			}
+            {
+            "path":file path on server,
+            "size":filesize,
+            "ctime":create time,
+            "mtime":modified time,
+            "md5":md5 valuel,
+            "fs_id":file id on server,
+            "isdir":direcotry,
+            "request_id":request id
+            }
         """
 
         params = {
@@ -483,15 +483,15 @@ class PCS(BaseClass):
 
     def upload_tmpfile(self, file_handler, callback=None, **kwargs):
         """
-		slicing upload
-			* upload files larger than 2GB
-			* continuous uploading(set uploading points)
-		parameters similar to self.upload()
+        slicing upload
+            * upload files larger than 2GB
+            * continuous uploading(set uploading points)
+        parameters similar to self.upload()
         return: requests.Response
-		    {
-			"md5":md5 value for this section, for later concatencating,
-		    "request_id":request id
-			}
+            {
+            "md5":md5 value for this section, for later concatencating,
+            "request_id":request id
+            }
         """
 
         params = {
@@ -504,12 +504,12 @@ class PCS(BaseClass):
 
     def upload_superfile(self, remote_path, block_list, ondup="newcopy", **kwargs):
         """
-		concatencating files
-		remote_path: file path + filename
-		    limits similar to self.upload()
+        concatencating files
+        remote_path: file path + filename
+            limits similar to self.upload()
         block_list: md5 list(2-1024)
         return: request.Response object
-			object similar to self.upload()
+            object similar to self.upload()
         """
 
         params = {
@@ -525,7 +525,7 @@ class PCS(BaseClass):
 
     def get_sign(self):
         # refered:
-        #	https://github.com/PeterDing/iScript/blob/master/pan.baidu.com.py
+        #    https://github.com/PeterDing/iScript/blob/master/pan.baidu.com.py
         url = 'http://pan.baidu.com/disk/home'
         r = self.session.get(url)
         html = r.content
@@ -568,7 +568,7 @@ class PCS(BaseClass):
 
     def _locatedownload(self, remote_path, **kwargs):
         """
-		bd guanjia method
+        bd guanjia method
         """
         params = {
             'path': remote_path
@@ -584,7 +584,7 @@ class PCS(BaseClass):
 
     def download_url(self, remote_path, **kwargs):
         """
-		return usable DIRECT link
+        return usable DIRECT link
         """
 
         def get_url(dlink):
@@ -620,11 +620,11 @@ class PCS(BaseClass):
     # using download_url to get real download url
     def download(self, remote_path, **kwargs):
         """
-		download single file
-		** refer to HTTP protocal Range definition
-		>>> headers = {'Range': 'bytes=0-99'}
-		>>> pcs = PCS('username','password')
-		>>> pcs.download('/test_sdk/test.txt', headers=headers)
+        download single file
+        ** refer to HTTP protocal Range definition
+        >>> headers = {'Range': 'bytes=0-99'}
+        >>> pcs = PCS('username','password')
+        >>> pcs.download('/test_sdk/test.txt', headers=headers)
         """
 
         params = {
@@ -637,12 +637,12 @@ class PCS(BaseClass):
 
     def get_streaming(self, path, stype="M3U8_AUTO_480", **kwargs):
         """
-		get m3u8 list of videos
+        get m3u8 list of videos
         path: video file path
-		stype:
-		    * M3U8_AUTO_240(unstable)
-		    * M3U8_AUTO_480(dfl)
-		    * M3U8_AUTO_720
+        stype:
+            * M3U8_AUTO_240(unstable)
+            * M3U8_AUTO_480(dfl)
+            * M3U8_AUTO_720
         return: str playlist info
         """
 
@@ -674,16 +674,16 @@ class PCS(BaseClass):
         """
         remote_path: path leading with '/'
         return: Response
-		    {
-			"fs_id":file id,
-			"path":file path,
-			"ctime":create,
-			"mtime":modify,
-			"status":0,
-			"isdir":1,
-			"errno":0,
-			"name":file path
-			}
+            {
+            "fs_id":file id,
+            "path":file path,
+            "ctime":create,
+            "mtime":modify,
+            "status":0,
+            "isdir":1,
+            "errno":0,
+            "name":file path
+            }
         """
 
         data = {
@@ -692,41 +692,41 @@ class PCS(BaseClass):
             "size": "",
             "block_list": "[]"
         }
-		# post ??
+        # post ??
         return self._request('create', 'post', data=data, **kwargs)
 
     def list_files(self, remote_path, by="name", order="desc",
                    limit=None, **kwargs):
         """
-		similar to ls
+        similar to ls
         by: order by key
-		    * time
-		    * name
-		    * size
+            * time
+            * name
+            * size
         order:
-		    * asc +
-			* desc -
+            * asc +
+            * desc -
         limit: return items in list [start, end)
         return: requests.Response
-			{
-			"errno":0,
-			"list":[
-				{
-				"fs_id":file id,
-				"path":path,
-				"server_filename":filename,
-				"size":file size,
-				"server_mtime":modify,
-				"server_ctime":create,
-				"local_mtime":local modify,
-				"local_ctime":local create,
-				"isdir":diretory,
-				"category":type,
-				"md5":md5 vlaue}
-				...
-		     ],
-			"request_id": request id
-			}
+            {
+            "errno":0,
+            "list":[
+                {
+                "fs_id":file id,
+                "path":path,
+                "server_filename":filename,
+                "size":file size,
+                "server_mtime":modify,
+                "server_ctime":create,
+                "local_mtime":local modify,
+                "local_ctime":local create,
+                "isdir":diretory,
+                "category":type,
+                "md5":md5 vlaue}
+                ...
+             ],
+            "request_id": request id
+            }
 
         """
         if order == "desc":
@@ -767,7 +767,7 @@ class PCS(BaseClass):
     def rename(self, rename_pair_list, **kwargs):
         """
         rename_pair_list:
-			* list of pairs of (origin, renamed)
+            * list of pairs of (origin, renamed)
         """
         foo = []
         for path, newname in rename_pair_list:
@@ -819,20 +819,20 @@ class PCS(BaseClass):
 
     def share(self, file_ids, pwd=None, **kwargs):
         """
-		create a shared link
+        create a shared link
         file_ids: list of file id
         path_list: list
         pwd: share password, str
         return: requests.Response
-			{
-			"errno": 0,
-			"request_id": request id,
-			"shareid": share id,
-			"link": share link,
-			"shorturl": short url,
-			"ctime": create time
-			"premis": false
-			}
+            {
+            "errno": 0,
+            "request_id": request id,
+            "shareid": share id,
+            "link": share link,
+            "shorturl": short url,
+            "ctime": create time
+            "premis": false
+            }
         """
         if pwd:
             data = {
@@ -854,13 +854,13 @@ class PCS(BaseClass):
                      filter_path=None, **kwargs):
         """
         file_type:
-		    * video
-			* audio
-			* image
-			* doc
-			* other
-			* exe
-			* torrent
+            * video
+            * audio
+            * image
+            * doc
+            * other
+            * exe
+            * torrent
         start: return items begining index
         limit: return items number, dfl 1000 
         filter_path: path filter 
@@ -896,7 +896,7 @@ class PCS(BaseClass):
 
     def add_download_task(self, source_url, remote_path, selected_idx=(), **kwargs):
         """
-		offline download
+        offline download
         """
         if source_url.startswith('magnet:?'):
             print('Magnet: "%s"' % source_url)
@@ -917,16 +917,16 @@ class PCS(BaseClass):
 
     def add_torrent_task(self, torrent_path, save_path='/', selected_idx=(), **kwargs):
         """
-		add local BT task
+        add local BT task
         torrent_path: local torrent path
         save_path: remote save path
         selected_idx: file index to download, null means all
         return: requests.Response
-			{
-			"task_id":task id,
-			"rapid_download":whether rapid download,
-			"request_id":request id
-			}
+            {
+            "task_id":task id,
+            "rapid_download":whether rapid download,
+            "request_id":request id
+            }
         """
 
         # upload torrent 
@@ -1015,36 +1015,36 @@ class PCS(BaseClass):
 
     def query_download_tasks(self, task_ids, operate_type=1, **kwargs):
         """
-		query task info by task id
+        query task info by task id
         task_ids: list or tuple
         operate_type:
-			* 0: task info
-			* 1: progress info(dfl)
+            * 0: task info
+            * 1: progress info(dfl)
         return: requests.Response
-			{
-			"task_info": {
-			    "70970481": {
-					"status":"0",
-					"file_size":"122328178",
-					"finished_size":"122328178",
-					"create_time":"1391620757",
-					"start_time":"1391620757",
-					"finish_time":"1391620757",
-					"save_path":"\/",
-					"source_url":"\/saki-nation04gbcn.torrent",
-					"task_name":"[KTXP][Saki-National][04][GB_CN][720p]",
-					"od_type":"2",
-					"file_list":[
-					{
-						"file_name":"[KTXP][Saki-National][04][GB_CN][720p].mp4",
-						"file_size":"122328178"
-					}
-					],
-					"result":0
-				}
-			},
-			"request_id":861570268
-			}
+            {
+            "task_info": {
+                "70970481": {
+                    "status":"0",
+                    "file_size":"122328178",
+                    "finished_size":"122328178",
+                    "create_time":"1391620757",
+                    "start_time":"1391620757",
+                    "finish_time":"1391620757",
+                    "save_path":"\/",
+                    "source_url":"\/saki-nation04gbcn.torrent",
+                    "task_name":"[KTXP][Saki-National][04][GB_CN][720p]",
+                    "od_type":"2",
+                    "file_list":[
+                    {
+                        "file_name":"[KTXP][Saki-National][04][GB_CN][720p].mp4",
+                        "file_size":"122328178"
+                    }
+                    ],
+                    "result":0
+                }
+            },
+            "request_id":861570268
+            }
         """
 
         params = {
@@ -1066,42 +1066,42 @@ class PCS(BaseClass):
     def list_download_tasks(self, need_task_info="1", asc="0", start=0, create_time=None, limit=1000, status="255", source_url=None, remote_path=None, **kwargs):
         """
         need_task_info:
-			* 1: yes(dfl)
+            * 1: yes(dfl)
         start: 0 dfl
         limit: 10 dfl
         asc:
             * 0: -(dfl)
-	    status:
-		   0: success
-		   1: in process
-		   2: system error
-		   3: resource non exist
-		   4: download timeout
-		   5: exist but fail
-		   6: out of storage
-		   7: data already exist
-		   8: task cancelled
+        status:
+           0: success
+           1: in process
+           2: system error
+           3: resource non exist
+           4: download timeout
+           5: exist but fail
+           6: out of storage
+           7: data already exist
+           8: task cancelled
         remote_path: file path, '' dfl
         expires: request expires
         return: Response
-			{
-			"task_info": [
-				{
-				"task_id": task id,
-				"od_type": "2",
-				"source_url": origin url, or bt path on server,
-				"save_path": save path,
-				"rate_limit": 0(dfl) no limitations,
-				"timeout": "0",
-				"callback": "",
-				"status": task status, 
-				"create_time": create time,
-				"task_name": task name, 
-				},...
-			],
-			"total": total number,
-			"request_id": request id 
-			}
+            {
+            "task_info": [
+                {
+                "task_id": task id,
+                "od_type": "2",
+                "source_url": origin url, or bt path on server,
+                "save_path": save path,
+                "rate_limit": 0(dfl) no limitations,
+                "timeout": "0",
+                "callback": "",
+                "status": task status, 
+                "create_time": create time,
+                "task_name": task name, 
+                },...
+            ],
+            "total": total number,
+            "request_id": request id 
+            }
         """
 
         params = {
@@ -1172,23 +1172,23 @@ class PCS(BaseClass):
     def rapidupload(self, file_handler, path, **kwargs):
         """
         return: requests.Response
-			* file exists, no need to upload
-			{
-				"path" : "/path/to/existing/file",
-				"size" : file size,
-				"ctime" : 1234567890,
-				"mtime" : 1234567890,
-				"md5" : "cb123afcc12453543ef",
-				"fs_id" : 12345,
-				"isdir" : 0,
-				"request_id" : 12314124
-			}
-			* need to be uploaded
-			{"errno":404,"info":[],"request_id":XXX}
-			* file size < 256kb (slice-md5 == content-md5)
-			{"errno":2,"info":[],"request_id":XXX}
-			* remote file exist
-			{"errno":-8,"info":[],"request_id":XXX}
+            * file exists, no need to upload
+            {
+                "path" : "/path/to/existing/file",
+                "size" : file size,
+                "ctime" : 1234567890,
+                "mtime" : 1234567890,
+                "md5" : "cb123afcc12453543ef",
+                "fs_id" : 12345,
+                "isdir" : 0,
+                "request_id" : 12314124
+            }
+            * need to be uploaded
+            {"errno":404,"info":[],"request_id":XXX}
+            * file size < 256kb (slice-md5 == content-md5)
+            {"errno":2,"info":[],"request_id":XXX}
+            * remote file exist
+            {"errno":-8,"info":[],"request_id":XXX}
 
         """
         file_handler.seek(0, 2)
@@ -1225,7 +1225,7 @@ class PCS(BaseClass):
         page: which page to return
         limit: items per page
         return: requests.Repsonse
-			same as self.list_files()
+            same as self.list_files()
         """
         params = {'dir': path,
                   'recursion': recursion,
@@ -1241,7 +1241,7 @@ class PCS(BaseClass):
         """
         quality: thumbnail quality, 100 dfl
         return: requests.Response
-			* 404 no thumbnail
+            * 404 no thumbnail
         """
         params = {'ec': 1,
                   'path': path,
@@ -1254,10 +1254,10 @@ class PCS(BaseClass):
 
     def meta(self, file_list, **kwargs):
         """
-		get the meta information of the file
+        get the meta information of the file
         file_list: ['/a.txt', '/b.txt']
         return: requests.Response
-		    * file doesn't exist
+            * file doesn't exist
             {"errno":12,"info":[{"errno":-9}],"request_id":3294861771}
             * file exist 
             {
@@ -1295,20 +1295,20 @@ class PCS(BaseClass):
 
     def check_file_blocks(self, path, size, block_list, **kwargs):
         """
-		file blocks checking
+        file blocks checking
         path: file path 
         size: file size 
         block_list: file blocks list, md5 of file to upload
         return: requests.Response
-			{
-				"errno": 0,
-				"path": "/18.rar",
-				"request_id": 2462633013,
-				"block_list": [
-					"8da0ac878f3702c0768dc6ea6820d3ff",
-					"3c1eb99b0e64993f38cd8317788a8855"
-				]
-			}
+            {
+                "errno": 0,
+                "path": "/18.rar",
+                "request_id": 2462633013,
+                "block_list": [
+                    "8da0ac878f3702c0768dc6ea6820d3ff",
+                    "3c1eb99b0e64993f38cd8317788a8855"
+                ]
+            }
 
         """
 
